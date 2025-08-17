@@ -585,7 +585,7 @@ with right_col:
             2. Click the 'Calculate Results' button at the top
             3. View the calculated nutritional parameters here
             
-            **Note:** All calculations are based on the nutritional database loaded from your CSV file.
+            **Note:** All calculations are based on the nutritional database.
             """)
 
 # Footer
