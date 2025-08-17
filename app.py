@@ -1,10 +1,18 @@
-import csv, re
+import csv
+import re
 import streamlit as st
+
+# Page configuration
+st.set_page_config(
+    page_title="Suryacore Crop Ingredient Calculator",
+    page_icon="🌾",
+    layout="wide"
+)
 
 csv_file = "converted_file.csv"
 header_row = True
 header_col = True
-prompt_cells = {f"B{i}" for i in range(2, 8)}  # B2 to B7
+prompt_cells = {f"B{i}" for i in range(2, 32)}  # B1 to B31
 computed_cache = {}    # cache for already computed cells
 
 def parse_cell_ref(cell_ref):
@@ -33,9 +41,14 @@ def parse_number(s):
         return float(m.group())
     return None
 
-with open(csv_file, newline='') as f:
-    reader = csv.reader(f)
-    sheet = list(reader)
+try:
+    with open(csv_file, newline='') as f:
+        reader = csv.reader(f)
+        sheet = list(reader)
+except FileNotFoundError:
+    st.error("Error: converted_file.csv not found. Please ensure the CSV file is uploaded or available.")
+    sheet = []
+    st.stop()
 
 def get_cell_value(cell):
     if cell in computed_cache:
@@ -87,7 +100,7 @@ def sumproduct(range1_start, range1_end, range2_start, range2_end):
         total += get_cell_value(f"{col_letters1}{start_row1 + i}") * get_cell_value(f"{col_letters2}{start_row2 + i}")
     return total
 
-# --- Define formula logic ---
+# --- Define formula logic (keeping all your existing functions) ---
 def calc_F1():
     val = sum_range("B2", "B41")
     computed_cache["F1"] = val
@@ -405,61 +418,176 @@ def calc_F22():
     computed_cache["F22"] = val
     return val
 
-# --- Run ---
-st.title("Crop Ingredient Calculator")
+# --- Streamlit Interface ---
 
-labels = {
-    "B2": "maize",
-    "B3": "jowar",
-    "B4": "B.rice",
-    "B5": "Wheat",
-    "B6": "Bajra",
-    "B7": "Ragi"  # Assuming for B7, adjust if needed
-}
+# Custom CSS for better styling
+st.markdown("""
+<style>
+    .main-header {
+        text-align: center;
+        color: #2E8B57;
+        margin-bottom: 2rem;
+    }
+    .calculate-btn {
+        text-align: center;
+        margin: 1rem 0;
+    }
+    .section-header {
+        color: #4682B4;
+        border-bottom: 2px solid #4682B4;
+        padding-bottom: 5px;
+        margin-bottom: 1rem;
+    }
+    .result-item {
+        background-color: #2E8B57;
+        padding: 8px;
+        margin: 2px 0;
+        border-radius: 4px;
+        border-left: 4px solid #28a745;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-for cell in sorted(prompt_cells):
-    label = labels.get(cell, "Unknown")
-    computed_cache[cell] = st.number_input(f"Quantity of {label} ({cell})", min_value=0.0, value=0.0)
+# Main title
+st.markdown('<h1 class="main-header">🌾 Suryacore Crop Ingredient Calculator</h1>', unsafe_allow_html=True)
 
-# Set B8 to B41 to 0.0
-for i in range(8, 42):
-    computed_cache[f"B{i}"] = 0.0
+# Calculate button at the top center
+col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
+with col_btn2:
+    st.markdown('<div class="calculate-btn">', unsafe_allow_html=True)
+    calculate_button = st.button("🔍 Calculate Results", type="primary", use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-if st.button("Calculate"):
-    st.write(f"F1: {calc_F1()}")
-    st.write(f"F2: {calc_F2()}")
-    st.write(f"F3: {calc_F3()}")
-    st.write(f"F4: {calc_F4()}")
-    st.write(f"F5: {calc_F5()}")
-    st.write(f"F6: {calc_F6()}")
-    st.write(f"F7: {calc_F7()}")
-    st.write(f"F8: {calc_F8()}")
-    st.write(f"F9: {calc_F9()}")
-    st.write(f"F10: {calc_F10()}")
-    st.write(f"F11: {calc_F11()}")
-    st.write(f"F12: {calc_F12()}")
-    st.write(f"F13: {calc_F13()}")
-    st.write(f"F14: {calc_F14()}")
-    st.write(f"F15: {calc_F15()}")
-    st.write(f"F16: {calc_F16()}")
-    st.write(f"F17: {calc_F17()}")
-    st.write(f"F18: {calc_F18()}")
-    st.write(f"F19: {calc_F19()}")
-    st.write(f"F20: {calc_F20()}")
-    st.write(f"F21: {calc_F21()}")
-    st.write(f"F22: {calc_F22()}")
-    st.write(f"F24: {calc_F24()}")
-    st.write(f"F25: {calc_F25()}")
-    st.write(f"F26: {calc_F26()}")
-    st.write(f"F27: {calc_F27()}")
-    st.write(f"F28: {calc_F28()}")
-    st.write(f"F29: {calc_F29()}")
-    st.write(f"F30: {calc_F30()}")
-    st.write(f"F31: {calc_F31()}")
-    st.write(f"F32: {calc_F32()}")
-    st.write(f"F33: {calc_F33()}")
-    st.write(f"F34: {calc_F34()}")
-    st.write(f"F35: {calc_F35()}")
-    st.write(f"F36: {calc_F36()}")
-    st.write(f"F37: {calc_F37()}")
-    st.write(f"F38: {calc_F38()}")
+# Create two main columns for split-screen layout
+left_col, right_col = st.columns([1, 1], gap="medium")
+
+# Left column - Input section
+with left_col:
+    st.markdown('<h3 class="section-header">📋 Input Quantities</h3>', unsafe_allow_html=True)
+    
+    # Ingredient labels dictionary
+    labels = {
+        "B2": "Maize",
+        "B3": "Jowar", 
+        "B4": "B.Rice",
+        "B5": "Wheat",
+        "B6": "Bajra",
+        "B7": "Ragi",
+        "B8": "R.Polish",
+        "B9": "DORB",
+        "B10": "SFOC",
+        "B11": "DOGN",
+        "B12": "SOYA",
+        "B13": "Fish Meal",
+        "B14": "RSM",
+        "B15": "LSP",
+        "B16": "SG",
+        "B17": "Mustard Meal",
+        "B18": "DCP",
+        "B19": "MOLASES",
+        "B20": "MEAT AND BONE Meal",
+        "B21": "Oil",
+        "B22": "MGM",
+        "B23": "Methionine",
+        "B24": "Lysine",
+        "B25": "Betaine",
+        "B26": "Cocktail Enzyme",
+        "B27": "Phytase",
+        "B28": "SodaBicarb",
+        "B29": "Salt",
+        "B30": "TM MIX",
+        "B31": "Rice DDGS"
+    }
+    
+    # Create scrollable container for inputs
+    with st.container(height=650):
+        for cell in sorted(prompt_cells):
+            label = labels.get(cell, f"Ingredient {cell}")
+            computed_cache[cell] = st.number_input(
+                f"**{label}**", 
+                min_value=0.0, 
+                value=float(st.session_state.get(f"input_{cell}", 0.0)),
+                step=0.1,
+                format="%.2f",
+                key=f"input_{cell}"
+            )
+
+# Right column - Results section
+with right_col:
+    st.markdown('<h3 class="section-header">📊 Calculation Results</h3>', unsafe_allow_html=True)
+    
+    # Create scrollable container for results
+    with st.container(height=650):
+        if calculate_button or st.session_state.get("show_results", False):
+            st.session_state.show_results = True
+            
+            try:
+                # Calculate all results
+                results = {
+                    "Total Quantity": calc_F1(),
+                    "Crude Protein (%)": calc_F2(),
+                    "ME (Mcal/Kg)": calc_F3(),
+                    "Calorie:Protein Ratio": calc_F4(),
+                    "Crude Fibre (%)": calc_F5(),
+                    "Lysine (%)": calc_F6(),
+                    "Methionine (%)": calc_F7(),
+                    "Cystine (%)": calc_F8(),
+                    "MET+CYS (%)": calc_F9(),
+                    "Arginine (%)": calc_F10(),
+                    "Calcium (%)": calc_F11(),
+                    "Total Phosphorus (%)": calc_F12(),
+                    "Available Phosphorus (%)": calc_F13(),
+                    "Na+K-Cl (mEq/kg)": calc_F14(),
+                    "Na:Cl Ratio": calc_F15(),
+                    "Na:K Ratio": calc_F16(),
+                    "Chloride (%)": calc_F17(),
+                    "Sodium (%)": calc_F18(),
+                    "Potassium (%)": calc_F19(),
+                    "Cost per kg": calc_F20(),
+                    "Cost per Bag": calc_F21(),
+                    "Margin": calc_F22(),
+                    "Chloride (mg/kg)": calc_F24(),
+                    "Sodium (mg/kg)": calc_F25(),
+                    "Potassium (mg/kg)": calc_F26(),
+                    "Manganese (mg/kg)": calc_F27(),
+                    "Zinc (mg/kg)": calc_F28(),
+                    "Selenium (mg/kg)": calc_F29(),
+                    "Iron (mg/kg)": calc_F30(),
+                    "Copper (mg/kg)": calc_F31(),
+                    "Cobalt (mg/kg)": calc_F32(),
+                    "Iodine (mg/kg)": calc_F33(),
+                    "Vitamin A (IU/kg)": calc_F34(),
+                    "Vitamin E (IU/kg)": calc_F35(),
+                    "Vitamin K (mg/kg)": calc_F36(),
+                    "Biotin (mcg/kg)": calc_F37(),
+                    "Choline (mg/kg)": calc_F38()
+                }
+                
+                # Display results with better formatting
+                for param, value in results.items():
+                    if value != 0:  # Only show non-zero results
+                        st.markdown(f'''
+                        <div class="result-item">
+                            <strong>{param}:</strong> {value:.4f}
+                        </div>
+                        ''', unsafe_allow_html=True)
+                    else:
+                        st.write(f"**{param}:** {value:.4f}")
+                        
+            except Exception as e:
+                st.error(f"Error in calculation: {str(e)}")
+                st.write("Please check your inputs and try again.")
+        else:
+            st.info("👆 Click the 'Calculate Results' button above to see the nutritional analysis.")
+            st.markdown("""
+            **Instructions:**
+            1. Enter the quantities of different ingredients in the left panel
+            2. Click the 'Calculate Results' button at the top
+            3. View the calculated nutritional parameters here
+            
+            **Note:** All calculations are based on the nutritional database loaded from your CSV file.
+            """)
+
+# Footer
+st.markdown("---")
+st.markdown("*Suryacore Crop Ingredient Calculator - Professional Feed Formulation Tool*")
