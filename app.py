@@ -4,7 +4,7 @@ import streamlit as st
 
 # Page configuration
 st.set_page_config(
-    page_title="Suryacore Crop Ingredient Calculator",
+    page_title="Suryacore Feed Formulator",
     page_icon="🌾",
     layout="wide"
 )
@@ -418,7 +418,9 @@ def calc_F22():
     computed_cache["F22"] = val
     return val
 
-# --- Streamlit Interface ---
+# Initialize session state for ingredient list
+if 'ingredient_list' not in st.session_state:
+    st.session_state.ingredient_list = {}
 
 # Custom CSS for better styling
 st.markdown("""
@@ -426,7 +428,12 @@ st.markdown("""
     .main-header {
         text-align: center;
         color: #2E8B57;
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;
+    }
+    .main-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
     }
     .calculate-btn {
         text-align: center;
@@ -437,33 +444,46 @@ st.markdown("""
         border-bottom: 2px solid #4682B4;
         padding-bottom: 5px;
         margin-bottom: 1rem;
+        font-size: 1.2rem;
     }
     .result-item {
-        background-color: #2E8B57;
-        padding: 8px;
+        background-color: #000000;
+        padding: 6px;
+        margin: 1px 0;
+        border-radius: 3px;
+        border-left: 3px solid #28a745;
+        font-size: 0.85rem;
+    }
+    .ingredient-item {
+        background-color: #000000;
+        padding: 6px;
         margin: 2px 0;
-        border-radius: 4px;
-        border-left: 4px solid #28a745;
+        border-radius: 3px;
+        border-left: 3px solid #2196f3;
+        font-size: 0.85rem;
+    }
+    .compact-input {
+        font-size: 0.8rem !important;
+    }
+    .stSelectbox > div > div {
+        font-size: 0.85rem;
+    }
+    .stNumberInput > div > div > input {
+        font-size: 0.8rem;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Main title
-st.markdown('<h1 class="main-header">🌾 Suryacore Crop Ingredient Calculator</h1>', unsafe_allow_html=True)
+# Main title with centered container
+st.markdown('<div class="main-container">', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🌾 Suryacore Feed Formulator</h1>', unsafe_allow_html=True)
 
-# Calculate button at the top center
-col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
-with col_btn2:
-    st.markdown('<div class="calculate-btn">', unsafe_allow_html=True)
-    calculate_button = st.button("🔍 Calculate Results", type="primary", use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# Create two main columns for split-screen layout
-left_col, right_col = st.columns([1, 1], gap="medium")
+# Create centered layout with reduced margins
+col_spacer1, left_col, right_col, col_spacer2 = st.columns([0.5, 1, 1, 0.5], gap="medium")
 
 # Left column - Input section
 with left_col:
-    st.markdown('<h3 class="section-header">📋 Input Quantities</h3>', unsafe_allow_html=True)
+    st.markdown('<h3 class="section-header">📋 Add Ingredients</h3>', unsafe_allow_html=True)
     
     # Ingredient labels dictionary
     labels = {
@@ -499,27 +519,86 @@ with left_col:
         "B31": "Rice DDGS"
     }
     
-    # Create scrollable container for inputs
-    with st.container(height=650):
-        for cell in sorted(prompt_cells):
-            label = labels.get(cell, f"Ingredient {cell}")
-            computed_cache[cell] = st.number_input(
-                f"**{label}**", 
-                min_value=0.0, 
-                value=float(st.session_state.get(f"input_{cell}", 0.0)),
-                step=0.1,
-                format="%.2f",
-                key=f"input_{cell}"
-            )
+    # Dropdown for ingredient selection
+    available_ingredients = [labels[cell] for cell in sorted(prompt_cells)]
+    selected_ingredient = st.selectbox(
+        "Select Ingredient:", 
+        options=["Select an ingredient..."] + available_ingredients,
+        key="ingredient_selector"
+    )
+    
+    if selected_ingredient != "Select an ingredient...":
+        # Find the corresponding cell
+        selected_cell = None
+        for cell, label in labels.items():
+            if label == selected_ingredient:
+                selected_cell = cell
+                break
+        
+        if selected_cell:
+            # Quantity input with smaller size
+            col1, col2, col3 = st.columns([3, 2, 1])
+            with col1:
+                st.write(f"**{selected_ingredient}**")
+            with col2:
+                quantity = st.number_input(
+                    "Quantity", 
+                    min_value=0.0,
+                    step=0.1,
+                    format="%.2f",
+                    key=f"qty_{selected_cell}",
+                    label_visibility="collapsed"
+                )
+            with col3:
+                if st.button("Add", key=f"add_{selected_cell}", type="primary"):
+                    if quantity > 0:
+                        st.session_state.ingredient_list[selected_cell] = {
+                            'name': selected_ingredient,
+                            'quantity': quantity
+                        }
+                        st.success(f"Added {selected_ingredient}")
+                        st.rerun()
+    
+    # Display current ingredient list
+    st.markdown("### Current Ingredients:")
+    if st.session_state.ingredient_list:
+        with st.container(height=300):
+            for cell, data in st.session_state.ingredient_list.items():
+                col1, col2, col3 = st.columns([3, 2, 1])
+                with col1:
+                    st.markdown(f'<div class="ingredient-item"><strong>{data["name"]}</strong></div>', unsafe_allow_html=True)
+                with col2:
+                    st.markdown(f'<div class="ingredient-item">{data["quantity"]:.2f}</div>', unsafe_allow_html=True)
+                with col3:
+                    if st.button("❌", key=f"remove_{cell}", help="Remove ingredient"):
+                        del st.session_state.ingredient_list[cell]
+                        st.rerun()
+        
+        # Clear all button
+        if st.button("Clear All", type="secondary"):
+            st.session_state.ingredient_list = {}
+            st.rerun()
+    else:
+        st.info("No ingredients added yet. Select ingredients from the dropdown above.")
 
 # Right column - Results section
 with right_col:
     st.markdown('<h3 class="section-header">📊 Calculation Results</h3>', unsafe_allow_html=True)
     
+    # Calculate button
+    col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
+    with col_btn2:
+        calculate_button = st.button("🔍 Calculate", type="primary", use_container_width=True)
+    
     # Create scrollable container for results
-    with st.container(height=650):
-        if calculate_button or st.session_state.get("show_results", False):
-            st.session_state.show_results = True
+    with st.container(height=600):
+        if calculate_button and st.session_state.ingredient_list:
+            # Update computed_cache with ingredient list values
+            for cell in prompt_cells:
+                if cell in st.session_state.ingredient_list:
+                    computed_cache[cell] = st.session_state.ingredient_list[cell]['quantity']
+                else:
+                    computed_cache[cell] = 0.0
             
             try:
                 # Calculate all results
@@ -564,30 +643,39 @@ with right_col:
                 }
                 
                 # Display results with better formatting
-                for param, value in results.items():
-                    if value != 0:  # Only show non-zero results
+                significant_results = {k: v for k, v in results.items() if abs(v) > 0.0001}
+                
+                if significant_results:
+                    for param, value in significant_results.items():
                         st.markdown(f'''
                         <div class="result-item">
                             <strong>{param}:</strong> {value:.4f}
                         </div>
                         ''', unsafe_allow_html=True)
-                    else:
-                        st.write(f"**{param}:** {value:.4f}")
+                else:
+                    st.warning("No significant results to display. Please add ingredients with quantities.")
                         
             except Exception as e:
                 st.error(f"Error in calculation: {str(e)}")
                 st.write("Please check your inputs and try again.")
+        
+        elif calculate_button and not st.session_state.ingredient_list:
+            st.warning("⚠️ Please add some ingredients before calculating!")
+        
         else:
-            st.info("👆 Click the 'Calculate Results' button above to see the nutritional analysis.")
+            st.info("👆 Add ingredients from the left panel and click 'Calculate' to see results.")
             st.markdown("""
             **Instructions:**
-            1. Enter the quantities of different ingredients in the left panel
-            2. Click the 'Calculate Results' button at the top
-            3. View the calculated nutritional parameters here
+            1. Select an ingredient from the dropdown
+            2. Enter the quantity 
+            3. Click 'Add' to add it to your formulation
+            4. Repeat for all desired ingredients
+            5. Click 'Calculate' to see nutritional analysis
             
-            **Note:** All calculations are based on the nutritional database.
+            **Note:** All calculations are based on the nutritional database from your CSV file.
             """)
 
 # Footer
 st.markdown("---")
-st.markdown("*Suryacore Crop Ingredient Calculator - Professional Feed Formulation Tool*")
+st.markdown("*Suryacore Feed Formulator - Professional Feed Formulation Tool*")
+st.markdown('</div>', unsafe_allow_html=True)  # Close main-container
