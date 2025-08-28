@@ -1427,9 +1427,7 @@ with right_col:
                     "Chloride (%)": calc_F17(),
                     "Sodium (%)": calc_F18(),
                     "Potassium (%)": calc_F19(),
-                    # "Cost per kg": calc_F20(),
-                    # "Cost per Bag": calc_F21(),
-                    # "Margin": calc_F22(),
+                    
                     "Chloride (mg/kg)": calc_F24(),
                     "Sodium (mg/kg)": calc_F25(),
                     "Potassium (mg/kg)": calc_F26(),
