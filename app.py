@@ -964,11 +964,7 @@ with right_col:
 
             **Note:** All calculations are based on the nutritional database from your CSV file.
 
-            **New Features:**
-            - Added K2-K15 ingredient inputs (14 new ingredients)  
-            - Added B39-B41 output fields (3 new outputs)  
-            - Added H24-H39 output fields (16 new outputs)  
-            - Total: 33 new fields added to the original functionality
+            
             """)
 
 # Footer
