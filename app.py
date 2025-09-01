@@ -12,7 +12,8 @@ st.set_page_config(
 csv_file = "converted_file.csv"
 header_row = True
 header_col = True
-prompt_cells = {f"B{i}" for i in range(2, 32)}  # B1 to B31
+# Updated prompt_cells to include K2-K15 range
+prompt_cells = {f"B{i}" for i in range(2, 32)} | {f"K{i}" for i in range(2, 16)}  # B2-B31 and K2-K15
 computed_cache = {}    # cache for already computed cells
 
 def parse_cell_ref(cell_ref):
@@ -346,31 +347,7 @@ def calc_F33():
     computed_cache["F33"] = val
     return val
 
-def calc_F34():
-    val = (get_cell_value("K2") * 82500) / calc_F1() if calc_F1() != 0 else 0.0
-    computed_cache["F34"] = val
-    return val
 
-def calc_F35():
-    val = (get_cell_value("K3") * 40 / calc_F1() if calc_F1() != 0 else 0.0) + \
-          (get_cell_value("K12") * 0.5 * 1000 / calc_F1() if calc_F1() != 0 else 0.0)
-    computed_cache["F35"] = val
-    return val
-
-def calc_F36():
-    val = (get_cell_value("K2") * 10) / calc_F1() if calc_F1() != 0 else 0.0
-    computed_cache["F36"] = val
-    return val
-
-def calc_F37():
-    val = (get_cell_value("K11") * 0.02 * 1000 * 1000) / calc_F1() if calc_F1() != 0 else 0.0
-    computed_cache["F37"] = val
-    return val
-
-def calc_F38():
-    val = get_cell_value("K7") * 0.6
-    computed_cache["F38"] = val
-    return val
 
 def calc_F17():
     val = calc_F24() / 10
@@ -436,6 +413,147 @@ def calc_F22():
     val = get_cell_value("H21") - cost_per_bag
     computed_cache["F22"] = val
     return val
+
+# NEW OUTPUT CALCULATION FUNCTIONS FOR B39-B41
+# CORRECTED OUTPUT CALCULATION FUNCTIONS FOR F34-F41
+# CORRECTED OUTPUT CALCULATION FUNCTIONS FOR F34-F41
+def calc_F34(): 
+    # K2 is separate user input for Premix
+    user_quantity_k2 = st.session_state.ingredient_list.get("K2", {}).get('quantity', 0)
+    return user_quantity_k2 * 82500 / calc_F1() if calc_F1() != 0 else 0.0
+
+def calc_F35(): 
+    # K3 and K12 are separate user inputs for Bcomplex and Vit E 50%
+    user_quantity_k3 = st.session_state.ingredient_list.get("K3", {}).get('quantity', 0)
+    user_quantity_k12 = st.session_state.ingredient_list.get("K12", {}).get('quantity', 0)
+    return (user_quantity_k3 * 40 + user_quantity_k12 * 0.5 * 1000) / calc_F1() if calc_F1() != 0 else 0.0
+
+def calc_F36(): 
+    # K2 is separate user input for Premix
+    user_quantity_k2 = st.session_state.ingredient_list.get("K2", {}).get('quantity', 0)
+    return user_quantity_k2 * 10 / calc_F1() if calc_F1() != 0 else 0.0
+
+def calc_F37(): 
+    # K11 is separate user input for Biotin 2%
+    user_quantity_k11 = st.session_state.ingredient_list.get("K11", {}).get('quantity', 0)
+    return user_quantity_k11 * 0.02 * 1000 * 1000 / calc_F1() if calc_F1() != 0 else 0.0
+
+def calc_F38(): 
+    # K7 is separate user input for Choline
+    user_quantity_k7 = st.session_state.ingredient_list.get("K7", {}).get('quantity', 0)
+    return user_quantity_k7 * 0.6
+
+def calc_F39(): 
+    # K3 is separate user input for Bcomplex
+    user_quantity_k3 = st.session_state.ingredient_list.get("K3", {}).get('quantity', 0)
+    return user_quantity_k3 * 3 / calc_F1() if calc_F1() != 0 else 0.0
+
+def calc_F40(): 
+    # K3 is separate user input for Bcomplex
+    user_quantity_k3 = st.session_state.ingredient_list.get("K3", {}).get('quantity', 0)
+    return user_quantity_k3 * 60 / calc_F1() if calc_F1() != 0 else 0.0
+
+def calc_F41(): 
+    # K3 is separate user input for Bcomplex
+    user_quantity_k3 = st.session_state.ingredient_list.get("K3", {}).get('quantity', 0)
+    return user_quantity_k3 * 40 / calc_F1() if calc_F1() != 0 else 0.0
+
+# CORRECTED OUTPUT CALCULATION FUNCTIONS FOR H24-H39
+# These are using sumproduct results which should be correct, but let me show the pattern:
+def calc_H24(): return calc_N83() / calc_F1() if calc_F1() != 0 else 0.0
+def calc_H25(): return calc_O83() / calc_F1() if calc_F1() != 0 else 0.0
+def calc_H26(): return calc_P83() / calc_F1() if calc_F1() != 0 else 0.0
+def calc_H27(): return calc_Q83() / calc_F1() if calc_F1() != 0 else 0.0
+def calc_H28(): return calc_R83() / calc_F1() if calc_F1() != 0 else 0.0
+def calc_H29(): return calc_S83() / calc_F1() if calc_F1() != 0 else 0.0
+def calc_H30(): return calc_T83() / calc_F1() if calc_F1() != 0 else 0.0
+def calc_H31(): return calc_U83() / calc_F1() if calc_F1() != 0 else 0.0
+def calc_H32(): return calc_V83() / calc_F1() if calc_F1() != 0 else 0.0
+def calc_H33(): return calc_AS83() / calc_F1() if calc_F1() != 0 else 0.0
+def calc_H34(): return calc_E83() / calc_F1() if calc_F1() != 0 else 0.0
+
+def calc_H35(): 
+    # K3 is separate user input for Bcomplex
+    user_quantity_k3 = st.session_state.ingredient_list.get("K3", {}).get('quantity', 0)
+    return user_quantity_k3 * 8 / calc_F1() if calc_F1() != 0 else 0.0
+
+def calc_H36(): 
+    # K2 is separate user input for Premix
+    user_quantity_k2 = st.session_state.ingredient_list.get("K2", {}).get('quantity', 0)
+    return user_quantity_k2 * 50 / calc_F1() if calc_F1() != 0 else 0.0
+
+def calc_H37(): 
+    # K3 is separate user input for Bcomplex
+    user_quantity_k3 = st.session_state.ingredient_list.get("K3", {}).get('quantity', 0)
+    return user_quantity_k3 * 4 / calc_F1() if calc_F1() != 0 else 0.0
+
+def calc_H38(): 
+    # K3 is separate user input for Bcomplex
+    user_quantity_k3 = st.session_state.ingredient_list.get("K3", {}).get('quantity', 0)
+    return user_quantity_k3 * 40 / calc_F1() if calc_F1() != 0 else 0.0
+
+def calc_H39(): 
+    # K2 and K6 are separate user inputs for Premix and Dicerol
+    user_quantity_k2 = st.session_state.ingredient_list.get("K2", {}).get('quantity', 0)
+    user_quantity_k6 = st.session_state.ingredient_list.get("K6", {}).get('quantity', 0)
+    return (user_quantity_k2 * 12000 + user_quantity_k6 * 600000) / calc_F1() if calc_F1() != 0 else 0.0
+
+# You'll also need these missing sumproduct functions for the H24-H34 calculations:
+def calc_N83():
+    val = sumproduct("B2", "B41", "N43", "N82")
+    computed_cache["N83"] = val
+    return val
+
+def calc_O83():
+    val = sumproduct("B2", "B41", "O43", "O82")
+    computed_cache["O83"] = val
+    return val
+
+def calc_P83():
+    val = sumproduct("B2", "B41", "P43", "P82")
+    computed_cache["P83"] = val
+    return val
+
+def calc_Q83():
+    val = sumproduct("B2", "B41", "Q43", "Q82")
+    computed_cache["Q83"] = val
+    return val
+
+def calc_R83():
+    val = sumproduct("B2", "B41", "R43", "R82")
+    computed_cache["R83"] = val
+    return val
+
+def calc_S83():
+    val = sumproduct("B2", "B41", "S43", "S82")
+    computed_cache["S83"] = val
+    return val
+
+def calc_T83():
+    val = sumproduct("B2", "B41", "T43", "T82")
+    computed_cache["T83"] = val
+    return val
+
+def calc_U83():
+    val = sumproduct("B2", "B41", "U43", "U82")
+    computed_cache["U83"] = val
+    return val
+
+def calc_V83():
+    val = sumproduct("B2", "B41", "V43", "V82")
+    computed_cache["V83"] = val
+    return val
+
+def calc_AS83():
+    val = sumproduct("B2", "B41", "AS43", "AS82")
+    computed_cache["AS83"] = val
+    return val
+
+def calc_E83():
+    val = sumproduct("B2", "B41", "E43", "E82")
+    computed_cache["E83"] = val
+    return val
+
 
 # Initialize session state for ingredient list
 if 'ingredient_list' not in st.session_state:
@@ -534,8 +652,9 @@ col_spacer1, left_col, right_col, col_spacer2 = st.columns([0.5, 1, 1, 0.5], gap
 with left_col:
     st.markdown('<h3 class="section-header">📋 Add Ingredients</h3>', unsafe_allow_html=True)
     
-    # Ingredient labels dictionary
+    # Ingredient labels dictionary - EXPANDED to include K2-K15
     labels = {
+        # Original B2-B31 ingredients
         "B2": "Maize",
         "B3": "Jowar", 
         "B4": "B.Rice",
@@ -565,7 +684,22 @@ with left_col:
         "B28": "SodaBicarb",
         "B29": "Salt",
         "B30": "TM MIX",
-        "B31": "Rice DDGS"
+        "B31": "Rice DDGS",
+        # NEW K2-K15 ingredients (using generic names - you can update these based on J2-J15)
+        "K2": "Premix",
+        "K3": "Bcomplex",
+        "K4": "Toxin Binder",
+        "K5": "Liver",
+        "K6": "Dicerol",
+        "K7": "Choline",
+        "K8": "Osconite",
+        "K9": "Anti Coccidial",
+        "K10": "Probiotic",
+        "K11": "Biotin 2%",
+        "K12": "Vit E 50%",
+        "K13": "AGP",
+        "K14": "Acidifier",
+        "K15": "Emulsifier"
     }
     
     # Dropdown for ingredient selection
@@ -733,7 +867,7 @@ with right_col:
                     computed_cache[cell] = 0.0
             
             try:
-                # Calculate all results
+                # Calculate all results - EXPANDED with new output fields
                 results = {
                     "Total Quantity": calc_F1(),
                     "Crude Protein (%)": calc_F2(),
@@ -771,51 +905,70 @@ with right_col:
                     "Vitamin E (IU/kg)": calc_F35(),
                     "Vitamin K (mg/kg)": calc_F36(),
                     "Biotin (mcg/kg)": calc_F37(),
-                    "Choline (mg/kg)": calc_F38()
+                    "Choline (mg/kg)": calc_F38(),
+                    # NEW OUTPUT FIELDS FROM B39-B41 (using E39-E41 names as placeholders)
+                    "Folicacid": calc_F39(),
+                    "Niacin": calc_F40(),
+                    "Panthothenicacid": calc_F41(),
+                    # NEW OUTPUT FIELDS FROM H24-H39 (using G24-G39 names as placeholders)
+                    "Histidine": calc_H24(),
+                    "Leucine": calc_H25(),
+                    "Isoleucine": calc_H26(),
+                    "P.Alanine": calc_H27(),
+                    "Threonine": calc_H28(),
+                    "Tryoptophan": calc_H29(),
+                    "Tyrosine": calc_H30(),
+                    "Valine": calc_H31(),
+                    "Serine": calc_H32(),
+                    "Linoleicacid": calc_H33(),
+                    "AFT": calc_H34(),
+                    "B6": calc_H35(),
+                    "B2": calc_H36(),
+                    "B1": calc_H37(),
+                    "B12": calc_H38(),
+                    "D3": calc_H39()
                 }
                 
-                # Display results with better formatting
-                significant_results = {}
-                for k, v in results.items():
-                    if v == "NA" or (isinstance(v, (int, float)) and abs(v) > 0.0001):
-                        significant_results[k] = v
-                
-                if significant_results:
-                    for param, value in significant_results.items():
-                        if value == "NA":
-                            st.markdown(f'''
-                            <div class="result-item">
-                                <strong>{param}:</strong> NA
-                            </div>
-                            ''', unsafe_allow_html=True)
-                        else:
-                            st.markdown(f'''
-                            <div class="result-item">
-                                <strong>{param}:</strong> {value:.4f}
-                            </div>
-                            ''', unsafe_allow_html=True)
-                else:
-                    st.warning("No significant results to display. Please add ingredients with quantities.")
-                        
+                            # Display all results with better formatting — no filtering
+                for param, value in results.items():
+                    if value == "NA":
+                        st.markdown(f'''
+                    <div class="result-item">
+                        <strong>{param}:</strong> NA
+                    </div>
+                    ''', unsafe_allow_html=True)
+                    else:
+                        st.markdown(f'''
+                    <div class="result-item">
+                        <strong>{param}:</strong> {value:.4f}
+                    </div>
+                    ''', unsafe_allow_html=True)
+
             except Exception as e:
                 st.error(f"Error in calculation: {str(e)}")
                 st.write("Please check your inputs and try again.")
-        
+
         elif calculate_button and not st.session_state.ingredient_list:
             st.warning("⚠️ Please add some ingredients before calculating!")
-        
+
         else:
             st.info("👆 Add ingredients from the left panel and click 'Calculate' to see results.")
             st.markdown("""
             **Instructions:**
-            1. Select an ingredient from the dropdown
-            2. Enter the quantity and cost per kg
-            3. Click 'Add' to add it to your formulation
-            4. Edit quantities directly in the ingredient list
-            5. Click 'Update' for individual changes or 'Update All' for bulk changes
-            6. Click 'Calculate' to see nutritional analysis
-            
+            1. Select an ingredient from the dropdown  
+            2. Enter the quantity and cost per kg  
+            3. Click 'Add' to add it to your formulation  
+            4. Edit quantities directly in the ingredient list  
+            5. Click 'Update' for individual changes or 'Update All' for bulk changes  
+            6. Click 'Calculate' to see nutritional analysis  
+
             **Note:** All calculations are based on the nutritional database from your CSV file.
+
+            **New Features:**
+            - Added K2-K15 ingredient inputs (14 new ingredients)  
+            - Added B39-B41 output fields (3 new outputs)  
+            - Added H24-H39 output fields (16 new outputs)  
+            - Total: 33 new fields added to the original functionality
             """)
 
 # Footer
