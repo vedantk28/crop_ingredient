@@ -649,225 +649,133 @@ st.markdown('<h1 class="main-header">🌾 Suryacore Feed Formulator</h1>', unsaf
 col_spacer1, left_col, right_col, col_spacer2 = st.columns([0.5, 1, 1, 0.5], gap="medium")
 
 # Left column - Input section
+# Top-level trigger logic (place this near the top of your script)
+if st.session_state.get("_queue_calculation", False):
+    st.session_state.trigger_calculation = True
+    st.session_state._queue_calculation = False
+
+# Left column - Input section
 with left_col:
-    st.markdown('<h3 class="section-header">📋 Add Ingredients</h3>', unsafe_allow_html=True)
-    
-    # Ingredient labels dictionary - EXPANDED to include K2-K15
+    st.markdown('<h3 class="section-header"> ADD INGREDIENTS</h3>', unsafe_allow_html=True)
+
+    # Ingredient labels
     labels = {
-        # Original B2-B31 ingredients
-        "B2": "Maize",
-        "B3": "Jowar", 
-        "B4": "B.Rice",
-        "B5": "Wheat",
-        "B6": "Bajra",
-        "B7": "Ragi",
-        "B8": "R.Polish",
-        "B9": "DORB",
-        "B10": "SFOC",
-        "B11": "DOGN",
-        "B12": "SOYA",
-        "B13": "Fish Meal",
-        "B14": "RSM",
-        "B15": "LSP",
-        "B16": "SG",
-        "B17": "Mustard Meal",
-        "B18": "DCP",
-        "B19": "MOLASES",
-        "B20": "MEAT AND BONE Meal",
-        "B21": "Oil",
-        "B22": "MGM",
-        "B23": "Methionine",
-        "B24": "Lysine",
-        "B25": "Betaine",
-        "B26": "Cocktail Enzyme",
-        "B27": "Phytase",
-        "B28": "SodaBicarb",
-        "B29": "Salt",
-        "B30": "TM MIX",
-        "B31": "Rice DDGS",
-        # NEW K2-K15 ingredients (using generic names - you can update these based on J2-J15)
-        "K2": "Premix",
-        "K3": "Bcomplex",
-        "K4": "Toxin Binder",
-        "K5": "Liver",
-        "K6": "Dicerol",
-        "K7": "Choline",
-        "K8": "Osconite",
-        "K9": "Anti Coccidial",
-        "K10": "Probiotic",
-        "K11": "Biotin 2%",
-        "K12": "Vit E 50%",
-        "K13": "AGP",
-        "K14": "Acidifier",
-        "K15": "Emulsifier"
+        "B2": "Maize", "B3": "Jowar", "B4": "B.Rice", "B5": "Wheat", "B6": "Bajra", "B7": "Ragi",
+        "B8": "R.Polish", "B9": "DORB", "B10": "SFOC", "B11": "DOGN", "B12": "SOYA", "B13": "Fish Meal",
+        "B14": "RSM", "B15": "LSP", "B16": "SG", "B17": "Mustard Meal", "B18": "DCP", "B19": "MOLASES",
+        "B20": "MEAT AND BONE Meal", "B21": "Oil", "B22": "MGM", "B23": "Methionine", "B24": "Lysine",
+        "B25": "Betaine", "B26": "Cocktail Enzyme", "B27": "Phytase", "B28": "SodaBicarb", "B29": "Salt",
+        "B30": "TM MIX", "B31": "Rice DDGS",
+        "K2": "Premix", "K3": "Bcomplex", "K4": "Toxin Binder", "K5": "Liver", "K6": "Dicerol",
+        "K7": "Choline", "K8": "Osconite", "K9": "Anti Coccidial", "K10": "Probiotic", "K11": "Biotin 2%",
+        "K12": "Vit E 50%", "K13": "AGP", "K14": "Acidifier", "K15": "Emulsifier"
     }
-    
-    # Dropdown for ingredient selection
-    available_ingredients = [labels[cell] for cell in sorted(prompt_cells)]
-    selected_ingredient = st.selectbox(
-        "Select Ingredient:", 
-        options=["Select an ingredient..."] + available_ingredients,
-        key="ingredient_selector"
-    )
-    
-    if selected_ingredient != "Select an ingredient...":
-        # Find the corresponding cell
-        selected_cell = None
-        for cell, label in labels.items():
-            if label == selected_ingredient:
-                selected_cell = cell
-                break
+
+    # Initialize session state
+    if 'selected_ingredients' not in st.session_state:
+        st.session_state.selected_ingredients = set()
+    if 'ingredient_list' not in st.session_state:
+        st.session_state.ingredient_list = {}
+
+    # Handle clear all action - this must happen before rendering checkboxes
+    if st.session_state.get("clear_all_triggered", False):
+        # Clear the selected ingredients set first
+        st.session_state.selected_ingredients = set()
+        st.session_state.ingredient_list = {}
+        st.session_state.trigger_calculation = False
+        st.session_state._queue_calculation = False
         
-        if selected_cell:
-            # Display selected ingredient name
-            st.markdown(f"**Selected: {selected_ingredient}**")
+        # Set all checkboxes to False
+        for cell in sorted(prompt_cells):
+            st.session_state[f"chk_{cell}"] = False
+            st.session_state[f"qty_{cell}"] = 0.0
+            st.session_state[f"cost_{cell}"] = 0.0
+        
+        # Reset the trigger
+        st.session_state.clear_all_triggered = False
+
+    st.markdown('<h3 class="section-header"></h3>', unsafe_allow_html=True)
+    with st.container(height=300):
+        for cell in sorted(prompt_cells):
+            label = labels.get(cell, cell)
             
-            # Create aligned input layout
-            col_qty, col_cost, col_btn = st.columns([1.5, 1.5, 1])
+            # The checkbox will use the session state value we set above
+            checked = st.checkbox(label, key=f"chk_{cell}")
             
-            with col_qty:
-                quantity = st.number_input(
-                    "Quantity (kg)", 
-                    min_value=0.0,
-                    step=0.1,
-                    format="%.2f",
-                    key=f"qty_{selected_cell}"
-                )
-            
-            with col_cost:
-                cost = st.number_input(
-                    "Cost/kg (₹)", 
-                    min_value=0.0,
-                    step=0.01,
-                    format="%.2f",
-                    key=f"cost_{selected_cell}"
-                )
-            
-            with col_btn:
-                st.write("")  # Add some space to align button
-                st.write("")  # Add more space
-                if st.button("Add", key=f"add_{selected_cell}", type="primary", use_container_width=True):
-                    if quantity > 0:
-                        st.session_state.ingredient_list[selected_cell] = {
-                            'name': selected_ingredient,
-                            'quantity': quantity,
-                            'cost': cost
-                        }
-                        st.success(f"Added {selected_ingredient}")
-                        st.rerun()
-                    else:
-                        st.warning("Quantity must be greater than 0")
-    
-    # Display current ingredient list with editable quantities
+            if checked:
+                st.session_state.selected_ingredients.add(cell)
+            else:
+                st.session_state.selected_ingredients.discard(cell)
+
     st.markdown("### Current Ingredients:")
-    if st.session_state.ingredient_list:
+    updated_ingredients = {}
+
+    if st.session_state.selected_ingredients:
         with st.container(height=300):
-            # Track changes to ingredient quantities
-            updated_ingredients = {}
-            
-            for i, (cell, data) in enumerate(st.session_state.ingredient_list.items()):
-                col1, col2, col3, col4, col5 = st.columns([2.5, 1.5, 1.5, 1, 0.5])
-                
+            for i, cell in enumerate(sorted(st.session_state.selected_ingredients)):
+                label = labels.get(cell, cell)
+                col1, col2, col3 = st.columns([2.5, 1.5, 1.5])
+
                 with col1:
-                    st.markdown(f'**{data["name"]}**')
-                
+                    st.markdown(f"**{label}**")
+
                 with col2:
-                    # Editable quantity field for each ingredient
-                    new_quantity = st.number_input(
+                    qty = st.number_input(
                         "Qty",
                         min_value=0.0,
-                        value=data["quantity"],
                         step=0.1,
                         format="%.2f",
-                        key=f"edit_qty_{cell}_{i}",
-                        label_visibility="visible"
+                        key=f"qty_{cell}"
                     )
-                    updated_ingredients[cell] = {'quantity': new_quantity}
-                
+
                 with col3:
-                    # Editable cost field for each ingredient
-                    current_cost = data.get('cost', 0.0)
-                    new_cost = st.number_input(
+                    cost = st.number_input(
                         "Cost",
                         min_value=0.0,
-                        value=current_cost,
                         step=0.01,
                         format="%.2f",
-                        key=f"edit_cost_{cell}_{i}",
-                        label_visibility="visible"
+                        key=f"cost_{cell}"
                     )
-                    updated_ingredients[cell]['cost'] = new_cost
-                
-                with col4:
-                    # Update button for individual ingredient
-                    if st.button("ADD", key=f"update_{cell}_{i}", type="secondary"):
-                        if new_quantity > 0:
-                            st.session_state.ingredient_list[cell]['quantity'] = new_quantity
-                            st.session_state.ingredient_list[cell]['cost'] = new_cost
-                            st.success(f"Updated {data['name']}")
-                            st.rerun()
-                        elif new_quantity == 0:
-                            st.warning(f"Quantity cannot be 0. Use remove button to delete ingredient.")
-                
-                with col5:
-                    # Remove button
-                    if st.button("❌", key=f"remove_{cell}_{i}", help="Remove ingredient"):
-                        del st.session_state.ingredient_list[cell]
-                        st.rerun()
-        
-        # Bulk update and clear buttons
-        col_update, col_clear = st.columns([1, 1])
-        with col_update:
-            if st.button("Update All", type="primary"):
-                changes_made = False
-                for cell, updates in updated_ingredients.items():
-                    if cell in st.session_state.ingredient_list:
-                        new_qty = updates['quantity']
-                        new_cost = updates['cost']
-                        
-                        if new_qty > 0:
-                            if (st.session_state.ingredient_list[cell]['quantity'] != new_qty or 
-                                st.session_state.ingredient_list[cell].get('cost', 0) != new_cost):
-                                st.session_state.ingredient_list[cell]['quantity'] = new_qty
-                                st.session_state.ingredient_list[cell]['cost'] = new_cost
-                                changes_made = True
-                        elif new_qty == 0:
-                            st.warning(f"Skipped {st.session_state.ingredient_list[cell]['name']} - quantity cannot be 0")
-                
-                if changes_made:
-                    st.success("All quantities updated!")
-                    st.rerun()
-                else:
-                    st.info("No changes detected")
-        
+
+                updated_ingredients[cell] = {'quantity': qty, 'cost': cost}
+
+        # Calculate and Clear buttons
+        col_calc, col_clear = st.columns([1, 1])
+        with col_calc:
+            if st.button("🔍 Calculate", type="primary"):
+                for cell, data in updated_ingredients.items():
+                    qty, cost = data['quantity'], data['cost']
+                    if qty > 0:
+                        st.session_state.ingredient_list[cell] = {
+                            'name': labels.get(cell, cell),
+                            'quantity': qty,
+                            'cost': cost
+                        }
+                    else:
+                        st.warning(f"{labels.get(cell)} skipped — quantity must be > 0")
+                st.session_state._queue_calculation = True
+                st.rerun()
+
         with col_clear:
             if st.button("Clear All", type="secondary"):
-                st.session_state.ingredient_list = {}
+                # Set the trigger flag instead of doing the clearing directly
+                st.session_state.clear_all_triggered = True
                 st.rerun()
     else:
-        st.info("No ingredients added yet. Select ingredients from the dropdown above.")
+        st.info("No ingredients selected yet. Use checkboxes above.")
+
+
 
 # Right column - Results section
 with right_col:
     st.markdown('<h3 class="section-header">📊 Calculation Results</h3>', unsafe_allow_html=True)
-    
-    # Calculate button
-    col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
-    with col_btn2:
-        calculate_button = st.button("🔍 Calculate", type="primary", use_container_width=True)
-    
-    # Create scrollable container for results
+
     with st.container(height=600):
-        if calculate_button and st.session_state.ingredient_list:
-            # Update computed_cache with ingredient list values
+        if st.session_state.get("trigger_calculation", False) and st.session_state.ingredient_list:
             for cell in prompt_cells:
-                if cell in st.session_state.ingredient_list:
-                    computed_cache[cell] = st.session_state.ingredient_list[cell]['quantity']
-                else:
-                    computed_cache[cell] = 0.0
-            
+                computed_cache[cell] = st.session_state.ingredient_list.get(cell, {}).get('quantity', 0.0)
+
             try:
-                # Calculate all results - EXPANDED with new output fields
                 results = {
                     "Total Quantity": calc_F1(),
                     "Crude Protein (%)": calc_F2(),
@@ -906,11 +814,9 @@ with right_col:
                     "Vitamin K (mg/kg)": calc_F36(),
                     "Biotin (mcg/kg)": calc_F37(),
                     "Choline (mg/kg)": calc_F38(),
-                    # NEW OUTPUT FIELDS FROM B39-B41 (using E39-E41 names as placeholders)
                     "Folicacid": calc_F39(),
                     "Niacin": calc_F40(),
                     "Panthothenicacid": calc_F41(),
-                    # NEW OUTPUT FIELDS FROM H24-H39 (using G24-G39 names as placeholders)
                     "Histidine": calc_H24(),
                     "Leucine": calc_H25(),
                     "Isoleucine": calc_H26(),
@@ -928,46 +834,30 @@ with right_col:
                     "B12": calc_H38(),
                     "D3": calc_H39()
                 }
-                
-                            # Display all results with better formatting — no filtering
+
                 for param, value in results.items():
                     if value == "NA":
-                        st.markdown(f'''
-                    <div class="result-item">
-                        <strong>{param}:</strong> NA
-                    </div>
-                    ''', unsafe_allow_html=True)
+                        st.markdown(f'<div class="result-item"><strong>{param}:</strong> NA</div>', unsafe_allow_html=True)
                     else:
-                        st.markdown(f'''
-                    <div class="result-item">
-                        <strong>{param}:</strong> {value:.4f}
-                    </div>
-                    ''', unsafe_allow_html=True)
+                        st.markdown(f'<div class="result-item"><strong>{param}:</strong> {value:.4f}</div>', unsafe_allow_html=True)
+
+                st.session_state.trigger_calculation = False
 
             except Exception as e:
                 st.error(f"Error in calculation: {str(e)}")
                 st.write("Please check your inputs and try again.")
 
-        elif calculate_button and not st.session_state.ingredient_list:
-            st.warning("⚠️ Please add some ingredients before calculating!")
+        elif not st.session_state.ingredient_list:
+                st.warning("⚠️ Please add some ingredients before calculating!")
 
         else:
-            st.info("👆 Add ingredients from the left panel and click 'Calculate' to see results.")
-            st.markdown("""
-            **Instructions:**
-            1. Select an ingredient from the dropdown  
-            2. Enter the quantity and cost per kg  
-            3. Click 'Add' to add it to your formulation  
-            4. Edit quantities directly in the ingredient list  
-            5. Click 'Update' for individual changes or 'Update All' for bulk changes  
-            6. Click 'Calculate' to see nutritional analysis  
+                st.info("👆 Add ingredients from the left panel and click 'Calculate' to see results.")
+                st.markdown("""
+    **Instructions:**
+    1. Select ingredients using the checkboxes  
+    2. Enter the quantity and cost per kg  
+    3. Click 'Calculate' to trigger nutritional analysis  
+    4. Use 'Clear All' to reset the formulation  
 
-            **Note:** All calculations are based on the nutritional database from your CSV file.
-
-            
-            """)
-
-# Footer
-st.markdown("---")
-st.markdown("*Suryacore Feed Formulator - Professional Feed Formulation Tool*")
-st.markdown('</div>', unsafe_allow_html=True)  # Close main-container
+    **Note:** All calculations are based on the nutritional database from your CSV file.
+    """)
