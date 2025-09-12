@@ -656,7 +656,7 @@ if st.session_state.get("_queue_calculation", False):
 
 # Left column - Input section
 with left_col:
-    st.markdown('<h3 class="section-header"> ADD INGREDIENTS</h3>', unsafe_allow_html=True)
+    st.markdown('<h3 class="section-header"> 📋ADD INGREDIENTS</h3>', unsafe_allow_html=True)
 
     # Ingredient labels
     labels = {
@@ -676,6 +676,8 @@ with left_col:
         st.session_state.selected_ingredients = set()
     if 'ingredient_list' not in st.session_state:
         st.session_state.ingredient_list = {}
+    if 'search_query' not in st.session_state:
+        st.session_state.search_query = ""
 
     # Handle clear all action - this must happen before rendering checkboxes
     if st.session_state.get("clear_all_triggered", False):
@@ -694,18 +696,55 @@ with left_col:
         # Reset the trigger
         st.session_state.clear_all_triggered = False
 
+    # Search functionality
+    st.markdown("##### 🔍 Search Ingredients")
+    search_query = st.text_input(
+        "Type to search ingredients...",
+        value=st.session_state.search_query,
+        placeholder="e.g., Maize, Soya, Oil, etc.",
+        key="ingredient_search",
+        help="Search by ingredient name to filter the list below"
+    )
+    
+    # Update session state with search query
+    st.session_state.search_query = search_query
+
+    # Filter ingredients based on search query
+    if search_query.strip():
+        filtered_cells = [
+            cell for cell in sorted(prompt_cells) 
+            if search_query.lower() in labels.get(cell, cell).lower()
+        ]
+        if not filtered_cells:
+            st.info(f"No ingredients found matching '{search_query}'")
+    else:
+        filtered_cells = sorted(prompt_cells)
+
+    # Show ingredient count
+    total_ingredients = len(prompt_cells)
+    showing_count = len(filtered_cells)
+    if search_query.strip():
+        st.caption(f"Showing {showing_count} of {total_ingredients} ingredients")
+    else:
+        st.caption(f"Showing all {total_ingredients} ingredients")
+
     st.markdown('<h3 class="section-header"></h3>', unsafe_allow_html=True)
+    
+    # Display filtered ingredients
     with st.container(height=300):
-        for cell in sorted(prompt_cells):
-            label = labels.get(cell, cell)
-            
-            # The checkbox will use the session state value we set above
-            checked = st.checkbox(label, key=f"chk_{cell}")
-            
-            if checked:
-                st.session_state.selected_ingredients.add(cell)
-            else:
-                st.session_state.selected_ingredients.discard(cell)
+        if filtered_cells:
+            for cell in filtered_cells:
+                label = labels.get(cell, cell)
+                
+                # The checkbox will use the session state value we set above
+                checked = st.checkbox(label, key=f"chk_{cell}")
+                
+                if checked:
+                    st.session_state.selected_ingredients.add(cell)
+                else:
+                    st.session_state.selected_ingredients.discard(cell)
+        else:
+            st.info("Use the search box above to find ingredients")
 
     st.markdown("### Current Ingredients:")
     updated_ingredients = {}
