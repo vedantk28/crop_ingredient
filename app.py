@@ -643,7 +643,7 @@ st.markdown("""
 
 # Main title with centered container
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
-st.markdown('<h1 class="main-header">🌾 Suryacore Feed Formulator</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🌾 Suryacore Feed Formulator -*Beta v-1.1</h1>', unsafe_allow_html=True)
 
 # Create centered layout with reduced margins
 col_spacer1, left_col, right_col, col_spacer2 = st.columns([0.5, 1, 1, 0.5], gap="medium")
