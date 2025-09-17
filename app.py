@@ -566,6 +566,18 @@ st.markdown("""
         text-align: center;
         color: #2E8B57;
         margin-bottom: 1rem;
+        font-size: 2rem;
+    }
+    .section-header {
+            color: #4682B4;
+            border-bottom: 2px solid #4682B4;
+            padding-bottom: 5px;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+    }    
+    .small-text { 
+            font-size: 0.7rem;
+            color: gray;   
     }
     .main-container {
         max-width: 1200px;
