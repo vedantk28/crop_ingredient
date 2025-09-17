@@ -581,7 +581,7 @@ st.markdown("""
         border-bottom: 2px solid #4682B4;
         padding-bottom: 5px;
         margin-bottom: 1rem;
-        font-size: 1.2rem;
+        font-size: 0.8rem;
     }
     .result-item {
         background-color: #000000;
